@@ -25,9 +25,17 @@ def intro (conc, hypos):
             hypos[0][1][:-1] == conc[1] and
             conc[2] == ["->", hypos[0][1][-1], hypos[0][2]])
 
+def efq (conc, hypos):
+    # Ex Falso Quodlibet.
+    return (len (hypos) == 0 and
+            is_valid_sequent (conc) and
+            len(conc[2]) == 3 and
+            conc[2][1] == "false")
+
 axioms = {
     "assumption" : assumption,
     "mp" : mp,
-    "intro" : intro
+    "intro" : intro,
+    "efq" : efq
 }
 
