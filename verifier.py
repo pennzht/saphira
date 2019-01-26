@@ -1,5 +1,6 @@
 import sys
 import treeparser
+from prettyprinter import pp
 import test1.simple
 
 def verify (axioms, tree):
@@ -9,7 +10,7 @@ def verify (axioms, tree):
                 type (sentence[0]) is not list and
                 type (sentence[2]) is list and
                 len (sentence[2]) >= 1):
-            print ('syntax error: {}.'.format (sentence))
+            print ('syntax error: {}.'.format (pp (sentence)))
             return False
         [index, conc, caller] = sentence
         callname = caller[0]
@@ -19,13 +20,16 @@ def verify (axioms, tree):
             if hypo_index in proven:
                 hypos.append (proven[hypo_index])
             else:
-                print ('error: hypothesis {} not found before {}'.format (hypo_index, sentence))
+                print ('error: hypothesis {} not found before {}'.format (hypo_index, pp (sentence)))
                 return False
-        if (callname in axioms and
-            axioms[callname] (conc, hypos)):
-            proven[index] = conc
+        if callname in axioms:
+            if axioms[callname] (conc, hypos):
+                proven[index] = conc
+            else:
+                print ('error: {} not provable via {}'.format (pp (sentence), callname))
+                return False
         else:
-            print ('error: {} not provable via {}'.format (sentence, callname))
+            print ('error: axiom {} does not exist.'.format (callname))
             return False
     return True
 
