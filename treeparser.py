@@ -47,6 +47,18 @@ def raw_tree_to_tree (raw_tree):
     elif type (raw_tree) is list:
         return [raw_tree_to_tree (elem) for elem in raw_tree]
 
+def tree_to_sexp (tree):
+    if type (tree) != list:
+        return tree
+    else:
+        ans = None
+        for elem in tree[::-1]:
+            ans = (tree_to_sexp (elem), ans)
+        return ans
+
 def code_to_tree (code):
     return raw_tree_to_tree (tokens_to_raw_tree (code_to_tokens (code)))
+
+def code_to_sexp (code):
+    return tree_to_sexp (code_to_tree (code))
 

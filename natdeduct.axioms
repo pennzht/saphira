@@ -1,0 +1,30 @@
+[
+  [MP [A B]
+    [mp [-> A B] A]
+    B]
+  [MPinv [A B]
+    B
+    [mp [-> A B] A]]
+  [I [A]
+    [-> A A]
+    True]
+  [Iinv [A]
+    True
+    [-> A A]]
+  [K [A B]
+    [-> A [-> B A]]
+    True]
+  [Kinv [A B]
+    True
+    [-> A [-> B A]]]
+  [S [A B C]
+    True
+    [-> [-> A [-> B C]]
+        [-> [-> A C]
+            [-> B C]]]]
+  [Sinv [A B C]
+    [-> [-> A [-> B C]]
+        [-> [-> A C]
+            [-> B C]]]
+    True]
+]
