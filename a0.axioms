@@ -1,0 +1,39 @@
+# a0.axioms
+
+[axiom samebranch
+  [free [k a]]
+  [= [if k a a] a]]
+
+[axiom assumptionleft
+  [free [k a b]]
+  [if k [= a [if k a b]] True]]
+
+[axiom assumptionright
+  [free [k a b]]
+  [if k True [= b [if k a b]]]]
+
+[axiom true
+  [free [a b]]
+  [= [if True a b] a]]
+
+[axiom false
+  [free [a b]]
+  [= [if False a b] b]]
+
+[axiom lift
+  [free [k a b x y]]
+  [= [if [if k a b] x y]
+     [if k [if a x y] [if b x y]]]]
+
+[axiom reflexivity
+  [free [x]]
+  [= [= x x] True]]
+
+[axiom equalif
+  [free [x y]]
+  [if [= x y] [= x y] True]]
+
+[axiom equalbool
+  [free [x y]]
+  [= [= x y] [if [= x y] True False]]]
+
