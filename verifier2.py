@@ -1,5 +1,7 @@
-from sys import stdin
+from sys import stdin, stdout, stderr
 from treeparser2 import *
+from exprparser2 import *
+from exprtyper2 import *
 from pprinter2 import *
 from type2 import *
 
@@ -12,21 +14,21 @@ axiomfile = 'a1.axioms'
 
 # read symbols, axioms, definitions
 
-symbols = []
-axioms = []
-definitions = []
+symbols = {}
+axioms = {}
+definitions = {}
 
 with open (axiomfile, 'r') as f:
     for expr in parser.parsestream (f):
         if expr[0] == 'symbol':
             [_, symname, symtype] = expr
-            symbols.append ([symname, symtype])
+            symbols[symname] = symtype
         elif expr[0] == 'axiom':
             [_, axiname, vartypes, form1, form2] = expr
-            axioms.append ([axiname, vartypes, form1, form2])
+            axioms[axiname] = [vartypes, form1, form2]
         elif expr[0] == 'define':
             [_, defname, defbody] = expr
-            definitions.append ([defname, defbody])
+            definitions[defname] = defbody
 
 pprinteach (symbols)
 
@@ -38,5 +40,12 @@ pprinteach (definitions)
 
 interaction = Parser ()
 
-statement = 'True'
+for expr in interaction.parseinputstream ():
+    try:
+        parsed = exprparse (expr) 
+        pprint (parsed)
+        trytype (parsed, symbols)
+        print ()
+    except SyntaxError as e:
+        print (f'Syntax error at {e}; please try again.')
 

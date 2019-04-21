@@ -42,13 +42,13 @@ class Parser:
             raise StopIteration ()
     def stackdepth (self):
         return len (self.stack) - 1
-    def prompt (self, cutoff = 16, tab = '  '):
+    def prompt (self, levelcutoff = 3, cutoff = 16, tab = '  '):
         indent = self.stackdepth ()
         indentshow = str (indent)
-        if len (indentshow) > 2:
-            indentshow = '++'
+        if len (indentshow) > levelcutoff:
+            indentshow = '.' * levelcutoff
         else:
-            indentshow = ' '*(2 - len (indentshow)) + indentshow
+            indentshow = ' '*(levelcutoff - len (indentshow)) + indentshow
         tabs = min (cutoff, indent)
         return indentshow + ' ? ' + tab * tabs
     def parseline (self, line):
@@ -84,6 +84,17 @@ class Parser:
                     yield self.nextexpr ()
             except ParseError:
                 print ('!!!! Parse error; please retry.')
+    def parseinputstream (self):
+        while True:
+            try:
+                line = input (self.prompt ())
+                self.parseline (line)
+                if self.hasnextexpr ():
+                    yield self.nextexpr ()
+            except ParseError:
+                print ('!!!! Parse error; please retry.')
+            except EOFError:
+                break
     def commit (self):
         self.uncommitted = []
     def rollback (self):
