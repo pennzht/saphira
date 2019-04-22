@@ -76,12 +76,38 @@ def unificationtermtype (side):
     else:
         raise ValueError ('Not a valid unification term.')
             
+def substitute
+
+def substituteall
+
 def unify (requirements):
     # unification algorithm
+    substitutions = []
     while requirements:
         lastcond = requirements.pop ()
         lastcond.sort (key = unificationtermtype)
-        #: pause here.
+        [lhs, rhs] = lastcond
+        [ttlhs, ttrhs] = [unificationtermtype (lhs), unificationtermtype (rhs)]
+        if ttlhs == 0:
+            if lhs == rhs:
+                pass
+            elif occurs (lhs, rhs):
+                return None
+            else:
+                substitutions.append ([lhs, rhs])
+                requirements = substituteall (lhs, rhs, requirements)
+        elif ttlhs == 1:
+            if lhs == rhs:
+                pass
+            else:
+                return None
+        elif ttlhs == 2:
+            if ttrhs != 2 or len (lhs) != len (rhs):
+                return None
+            else:
+                for index in range (len (lhs)):
+                    requirements.append ([lhs[index], rhs[index]])
+    return substitutions
 
 def trytype (parsed, symbols):
     requirements = list (join (typerequirements (parsed, symbols), varrequirements (parsed)))
