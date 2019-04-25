@@ -2,6 +2,10 @@ from treeparser2a import *
 from pprinter2 import *
 from sys import argv
 
+functions = {}
+axioms = {}
+theorems = {}
+    
 
 def replace (expr, variables, values):
     replacements = {var : val for (var, val) in zip (variables, values)}
@@ -14,6 +18,7 @@ def replacedict (expr, replacements):
         return expr if expr not in replacements else replacements[expr]
 
 def evaluate (expr):
+    global functions
     if type (expr) is not list:
         return expr
     elif expr[0] == 'quote':
@@ -38,6 +43,8 @@ def evaluate (expr):
         return evaluate_cases (expr)
     elif expr[0] == 'match':
         return evaluate_match (expr)
+    elif expr[0] == 'in':
+        return evaluate (expr[1]) in evaluate (expr[2])
     elif expr[0] in functions:
         return evaluate_function (expr)
     else:
@@ -78,9 +85,9 @@ def trymatch (value, pattern):
 
 def evaluate_match (expr):
     [_match, value, pattern, transform] = expr
-    (hasmatch, matches) = trymatch (value, pattern)
+    (hasmatch, matches) = trymatch (evaluate (value), pattern)
     if hasmatch:
-        return replacedict (transform, matches)
+        return evaluate (replacedict (transform, {index: ['quote', word] for (index, word) in matches.items ()}))
     else:
         return False
 
@@ -90,51 +97,60 @@ def evaluate_function (expr):
     function = functions[function_name]
     return evaluate (replace (function[1], function[0], args))
 
-parser = Parser ()
+def main ():
+    
+    parser = Parser ()
 
-functions = {}
-axioms = {}
-
-with open ('a3.axioms', 'r') as axiomsfile:
-    for expr in parser.parsestream (axiomsfile):
-        # pprint (expr)
-        if expr[0] == 'def':
-            [_def, [fn_name, *fn_arg_names], fn_body] = expr
-            functions[fn_name] = [fn_arg_names, fn_body]
-        elif expr[0] == 'axiom':
-            [_axiom, axiom_name,
-             _blanks, blanks,
-             _require, requirements,
-             _from, sources,
-             _obtain, target] = expr
-            axioms[axiom_name] = [blanks, requirements, sources, target]
-
-# verify
-filename = argv [1:] [0]
-
-parser = Parser ()
-
-with open (filename, 'r') as theoryfile:
-    for expr in parser.parsestream (theoryfile):
-        if expr[0] == 'prove':
-            [_prove, my_target, [my_axiom_name, *my_blanks], my_sources] = expr
-            # print (my_axiom_name)
-            # print (my_blanks)
-            # print (my_sources)
-            # print (my_target)
-
-            if my_axiom_name not in axioms:
-                print (f'Axiom {axiom_name} not found.')
-            else:
-                axiom = axioms[my_axiom_name]
-                [blanks, requirements, sources, target] = axiom
-                if len (blanks) != len (my_blanks):
-                    print (f'{len (blanks)} blanks needed but {len (my_blanks)} provided.')
-                elif len (sources) != len (my_sources):
-                    print (f'{len (sources)} sources needed but {len (my_sources)} provided.')
-                elif replace ([sources, target], blanks, my_blanks) != [my_sources, my_target]:
-                    print (f'Non-matching pattern in {pformat (expr)}.')
-                elif any (evaluate (replace (requirement, blanks, [['quote', r] for r in my_blanks])) != True for requirement in requirements):
-                    print (f'Requirement not met in {pformat (expr)}.')
+    global functions
+    global axioms
+    global theorems
+    
+    with open ('a3.axioms', 'r') as axiomsfile:
+        for expr in parser.parsestream (axiomsfile):
+            # pprint (expr)
+            if expr[0] == 'def':
+                [_def, [fn_name, *fn_arg_names], fn_body] = expr
+                functions[fn_name] = [fn_arg_names, fn_body]
+            elif expr[0] == 'axiom':
+                [_axiom, axiom_name,
+                 _blanks, blanks,
+                 _require, requirements,
+                 _from, sources,
+                 _obtain, target] = expr
+                axioms[axiom_name] = [blanks, requirements, sources, target]
+    
+    # verify
+    filename = argv [1:] [0]
+    
+    parser = Parser ()
+    
+    
+    with open (filename, 'r') as theoryfile:
+        for expr in parser.parsestream (theoryfile):
+            if expr[0] == 'prove':
+                [_prove, theorem_name, my_target, [my_axiom_name, *my_blanks], my_sources] = expr
+                # print (my_axiom_name)
+                # print (my_blanks)
+                # print (my_sources)
+                # print (my_target)
+    
+                if my_axiom_name not in axioms:
+                    print (f'Axiom {my_axiom_name} not found.')
                 else:
-                    print ('Success.')
+                    axiom = axioms[my_axiom_name]
+                    [blanks, requirements, sources, target] = axiom
+                    if len (blanks) != len (my_blanks):
+                        print (f'In {pformat(expr)}: {len (blanks)} blanks needed but {len (my_blanks)} provided.')
+                    elif len (sources) != len (my_sources):
+                        print (f'In {pformat(expr)}: {len (sources)} sources needed but {len (my_sources)} provided.')
+                    elif replace ([sources, target], blanks, my_blanks) != [[theorems[s] for s in my_sources], my_target]:
+                        print (f'Non-matching pattern in {pformat (expr)}.')
+                    elif any (evaluate (replace (requirement, blanks, [['quote', r] for r in my_blanks])) != True for requirement in requirements):
+                        print (f'Requirement not met in {pformat (expr)}.')
+                        print ([replace (requirement, blanks, [['quote', r] for r in my_blanks]) for requirement in requirements])
+                    else:
+                        theorems[theorem_name] = my_target
+                        print ('Success.')
+
+if __name__ == '__main__':
+    main ()
