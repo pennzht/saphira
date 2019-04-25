@@ -1,0 +1,508 @@
+[def [reserved]
+ [quote [|- both -> either False <-> not forall exists
+    = != < > <= >=
+    + * ^ 0 S]]]
+
+[def [is_unreserved_atom A]
+  [both
+    [is_atom A]
+    [not [in A [reserved]]]]]
+
+[def [is_env E]
+  [either
+    [= E [list]]
+    [match E [prev last]
+             [both
+               [is_env prev]
+               [either
+                 [is_prop prev last]
+                 [match last [[quote let] x]
+                             [is_new_var prev x]]]]]]]
+
+[def [is_prop E P]
+  [any
+    [match P [connective P1 P2]
+             [all
+               [in connective [quote [both either -> <->]]]
+               [is_prop E P1]
+               [is_prop E P2]]]
+    [match P [[quote not] P1]
+             [is_prop E P1]]
+    [match P [quote False]
+             True]
+    [match P [comparison P1 P2]
+             [all
+               [in comparison [quote [= != < > <= >=]]]
+               [is_value E P1]
+               [is_value E P2]]]
+    [match P [quantifier var body]
+             [all
+               [is_unreserved_atom var]
+               [is_prop [list E [list [quote let] var]] body]]]
+    ]]
+
+[def [is_value E V]
+  [any
+    [is_var E V]
+    [match V [operator P1 P2]
+             [all
+               [in operator [quote [+ * ^]]]
+               [is_value E P1]
+               [is_value E P2]]]
+    [match V [[quote S] P1]
+             [is_value E P1]]
+    [match V [quote 0] True]
+    ]]
+
+[def [is_var E Var]
+  [either
+    [match E [rest [[quote let] v]] True]
+    [match E [rest last] [is_var rest Var]]]]
+
+[def [is_new_var E V]
+  [both
+    [is_unreserved_atom V]
+    [no_free_appearance E V]]]
+
+[def [no_free_appearance E Var]
+  [either
+    [= E [list]]
+    [match E [rest last]
+             [all [is_prop rest last]
+                  [no_free_appearance_in_prop last Var]
+                  [no_free_appearance rest Var]]]]]
+
+[def [no_free_appearance_in_prop P Var]
+  [any
+    [both [is_atom P] [not [= P Var]]]
+    [match P [quantifier v body]
+             [both [in quantifier [quote [forall exists]]]
+                   [= v Var]]]
+    [all [not [is_atom P]]
+         [no_free_appearance_in_prop [first P] Var]
+         [no_free_appearance_in_prop [rest P] Var]]
+  ]]
+
+[def [is_valid_substitution x A y B]
+  [= [substitute A x y] B]]
+
+[def [substitute A x y]
+  [cases
+
+    [match A [quantifier var body]
+             [both [in quantifier [quote [forall exists]]]
+                   [= var x]]]
+    A
+
+    [= A x]
+    y
+
+    [is_atom A]
+    A
+
+    [not [is_atom A]]
+    [cons [substitute [first A] x y]
+          [substitute [rest A] x y]]
+
+  ]]
+
+[axiom both_intro
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- env A]
+   [|- env B]]
+ obtain
+  [|- env [both A B]]]
+
+[axiom both_elim_l
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- env [both A B]]]
+ obtain
+  [|- env A]]
+
+[axiom both_elim_r
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- env [both A B]]]
+ obtain
+  [|- env B]]
+
+[axiom impl_intro
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- [env A] B]]
+ obtain
+  [|- [-> A B]]]
+
+[axiom impl_elim
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- env [-> A B]]
+   [|- env A]]
+ obtain
+  [|- env B]]
+
+[axiom either_intro_l
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- env A]]
+ obtain
+  [|- env [either A B]]]
+
+[axiom either_intro_r
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- env B]]
+ obtain
+  [|- env [either A B]]]
+
+[axiom either_elim
+ blanks [env A B C]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]
+   [is_prop env C]]
+ from
+  [[|- env [either A B]]
+   [|- env [-> A C]]
+   [|- env [-> B C]]]
+ obtain
+  [|- env C]]
+
+[axiom false_intro
+ blanks [env A]
+ require
+  [[is_env env]
+   [is_prop env A]]
+ from
+  []
+ obtain
+  [|- env [either A [-> A False]]]]
+
+[axiom false_elim
+ blanks [env A]
+ require
+  [[is_env env]
+   [is_prop env A]]
+ from
+  [[|- env False]]
+ obtain
+  [|- env A]]
+
+[axiom not_intro
+ blanks [env A]
+ require
+  [[is_env env]
+   [is_prop env A]]
+ from
+  [[|- env [-> A False]]]
+ obtain
+  [|- env [not A]]]
+
+[axiom not_elim
+ blanks [env A]
+ require
+  [[is_env env]
+   [is_prop env A]]
+ from
+  [[|- env [not A]]]
+ obtain
+  [|- env [-> A False]]]
+
+[axiom equiv_intro
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- env [both [-> A B] [-> B A]]]]
+ obtain
+  [|- env [<-> A B]]]
+
+[axiom equiv_elim
+ blanks [env A B]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_prop env B]]
+ from
+  [[|- env [<-> A B]]]
+ obtain
+  [|- env [both [-> A B] [-> B A]]]]
+
+[axiom forall_intro
+ blanks [env x A]
+ require
+  [[is_env env]
+   [is_prop env A]
+   [is_new_var env x]]
+ from
+  [[|- [env [let x]] A]]
+ obtain
+  [|- env [forall x A]]]
+
+[axiom forall_elim
+ blanks [env x A y B]
+ require
+  [[is_env env]
+   [is_var env x]
+   [is_value env y]
+   [is_prop env A]
+   [is_prop env B]
+   [is_valid_substitution x A y B]]
+ from
+  [[|- env [forall x A]]]
+ obtain
+  [|- env B]]
+
+[axiom exists_intro
+ blanks [env x A]
+ require
+  [[is_env env]
+   [is_var env x]
+   [is_prop env A]]
+ from
+  [[|- env [-> [forall x [-> A False]] False]]]
+ obtain
+  [|- env [exists x A]]]
+
+[axiom exists_elim
+ blanks [env x A]
+ require
+  [[is_env env]
+   [is_var env x]
+   [is_prop env A]]
+ from
+  [[|- env [exists x A]]]
+ obtain
+  [|- env [-> [forall x [-> A False]] False]]]
+
+[axiom eq_refl
+ blanks [env x]
+ require
+  [[is_env env]
+   [is_value env x]]
+ from
+  []
+ obtain
+  [|- env [= x x]]]
+
+[axiom eq_sym
+ blanks [env x y]
+ require
+  [[is_env env]
+   [is_value env x]
+   [is_value env y]]
+ from
+  [[|- env [= x y]]]
+ obtain
+  [|- env [= y x]]]
+
+[axiom eq_trans
+ blanks [env x y z]
+ require
+  [[is_env env]
+   [is_value env x]
+   [is_value env y]
+   [is_value env z]]
+ from
+  [[|- env [= x y]]
+   [|- env [= y z]]]
+ obtain
+  [|- env [= x z]]]
+
+[axiom eq_succ
+ blanks [env x y]
+ require
+  [[is_env env]
+   [is_value env x]
+   [is_value env y]]
+ from
+  []
+ obtain
+  [|- env [<->
+            [= x y]
+            [= [S x] [S y]]]]]
+
+[axiom zero_is_not_succ
+ blanks [env x]
+ require
+  [[is_env env]
+   [is_value env x]]
+ from
+  []
+ obtain
+  [|- env
+      [not [= 0 [S x]]]]]
+
+[axiom induction
+ blanks [env x P0 Px PSx]
+ require
+  [[is_env env]
+   [is_new_var env x]
+   [is_prop [list env [list [quote let] x]] Px]
+   [is_prop [list env [list [quote let] x]] PSx]
+   [is_valid_substitution x Px 0 P0]
+   [is_valid_substitution x Px [list [quote S] x] PSx]]
+ from
+  [[|- env P0]
+   [|- [env [let x]]
+       [-> Px PSx]]]
+ obtain
+  [|- [env [let x]]
+       Px]]
+
+[axiom +_0
+ blanks [env x]
+ require
+  [[is_env env]
+   [is_value env x]]
+ from
+  []
+ obtain
+  [|- env [= [+ x 0] x]]]
+
+[axiom +_S
+ blanks [env x y]
+ require
+  [[is_env env]
+   [is_value env x]
+   [is_value env y]]
+ from
+  []
+ obtain
+  [|- env [= [+ x [S y]] [S [+ x y]]]]]
+
+[axiom *_0
+ blanks [env x]
+ require
+  [[is_env env]
+   [is_value env x]]
+ from
+  []
+ obtain
+  [|- env [= [* x 0] 0]]]
+
+[axiom *_S
+ blanks [env x y]
+ require
+  [[is_env env]
+   [is_value env x]
+   [is_value env y]]
+ from
+  []
+ obtain
+  [|- env [= [* x [S y]] [+ x [* x y]]]]]
+
+[axiom ^_0
+ blanks [env x]
+ require
+  [[is_env env]
+   [is_value env x]]
+ from
+  []
+ obtain
+  [|- env [= [^ x 0] [S 0]]]]
+
+[axiom ^_S
+ blanks [env x y]
+ require
+  [[is_env env]
+   [is_value env x]
+   [is_value env y]]
+ from
+  []
+ obtain
+  [|- env [= [^ x [S y]] [* x [^ x y]]]]]
+
+[axiom def<=
+ blanks [env x a b]
+ require
+  [[is_env env]
+   [is_new_var env x]
+   [is_value env a]
+   [is_value env b]]
+ from
+  []
+ obtain
+  [|- env [<-> [<= a b]
+               [exists x [= [+ a x] b]]]]]
+
+[axiom def>=
+ blanks [env a b]
+ require
+  [[is_env env]
+   [is_value env a]
+   [is_value env b]]
+ from
+  []
+ obtain
+  [|- env [<-> [>= a b] [<= b a]]]]
+
+[axiom def<
+ blanks [env a b]
+ require
+  [[is_env env]
+   [is_value env a]
+   [is_value env b]]
+ from
+  []
+ obtain
+  [|- env [<-> [< a b]
+               [both [<= a b] [not [= a b]]]]]]
+
+[axiom def>
+ blanks [env a b]
+ require
+  [[is_env env]
+   [is_value env a]
+   [is_value env b]]
+ from
+  []
+ obtain
+  [|- env [<-> [> a b]
+               [both [<= b a] [not [= b a]]]]]]
+
+[axiom def!=
+ blanks [env a b]
+ require
+  [[is_env env]
+   [is_value env a]
+   [is_value env b]]
+ from
+  []
+ obtain
+  [|- env [<-> [!= a b]
+               [not [= a b]]]]]
+

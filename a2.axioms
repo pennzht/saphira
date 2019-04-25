@@ -1,0 +1,139 @@
+#: Basic types
+#: bool, nat
+#: permissible types:
+#: bool, nat, (Type) -> (Type)
+#: permissible in-theory types:
+#: bool, nat, bool -> (ITType), nat -> (ITType)
+
+#: Language
+
+[symbol True bool]
+[symbol False bool]
+[symbol if [-> bool [-> bool [-> bool bool]]]]
+[symbol forall [-> [-> nat bool] bool]]
+[symbol exists [-> [-> nat bool] bool]]
+[symbol first [-> [-> nat bool] nat]]
+[symbol = [-> T [-> T bool]]]
+
+[symbol Zero nat]
+[symbol Succ [-> nat nat]]
+[symbol + [-> nat [-> nat nat]]]
+[symbol * [-> nat [-> nat nat]]]
+[symbol ^ [-> nat [-> nat nat]]]
+[symbol <= [-> nat [-> nat bool]]]
+
+#: Axioms
+
+[axiom true
+  [[a T] [b T]]
+  [if True a b]
+  a]
+
+[axiom false
+  [[a T] [b T]]
+  [if False a b]
+  b]
+
+[axiom equality
+  [[a T]]
+  [= a a]
+  True]
+
+[define and
+  [=> a? b? [if a? b? False]]]
+
+[define or
+  [=> a? b? [if a? True b?]]]
+
+[define implies
+  [=> a? b? [if a? b? True]]]
+
+[define not
+  [=> a? [if a? False True]]]
+
+[axiom epsilon
+  [[n nat] [pred [-> nat bool]]]
+  [implies [pred n] [pred [first pred]]]
+  True]
+
+[define exists
+  [=> pred [pred [first pred]]]]
+
+[define forall
+  [=> pred [pred [first [=> x [not [pred x]]]]]]]
+
+[axiom zero_is_not_succ
+  [[a nat]]
+  [= Zero [Succ a]]
+  False]
+
+[axiom nonzero_is_succ
+  [[a nat]]
+  [exists [=> x [= a [Succ x]]]]
+  True]
+
+[axiom succ_is_injective
+  [[a nat] [b nat]]
+  [= [Succ a] [Succ b]]
+  [= a b]]
+
+[axiom add_zero
+  [[a nat]]
+  [+ a Zero]
+  a]
+
+[axiom add_succ
+  [[a nat] [b nat]]
+  [+ a [Succ b]]
+  [Succ [+ a b]]]
+
+[axiom mult_zero
+  [[a nat]]
+  [* a Zero]
+  Zero]
+
+[axiom mult_succ
+  [[a nat] [b nat]]
+  [* a [Succ b]]
+  [+ a [* a b]]]
+
+[axiom pow_zero
+  [[a nat]]
+  [^ a Zero]
+  [Succ Zero]]
+
+[axiom pow_succ
+  [[a nat] [b nat]]
+  [^ a [Succ b]]
+  [* a [^ a b]]]
+
+[axiom le_zero
+  [[a nat]]
+  [<= 0 a]
+  True]
+
+[axiom le_succ
+  [[a nat] [b nat]]
+  [<= [Succ b] a]
+  [and [<= b a] [not [= b a]]]]
+
+[define <
+  [=> a b [and [<= a b] [not [= a b]]]]]
+
+[define >=
+  [=> a b [<= b a]]]
+
+[define >
+  [=> a b [< b a]]]
+
+[define !=
+  [=> a b [or [< a b] [< b a]]]]
+
+[axiom first_predicate
+  [[pred [-> nat bool]]]
+  [if [exists pred]
+      [forall [=> x [implies [< x [first pred]]
+                             [not [pred x]]]]]
+      [= [first pred] Zero]]
+  True]
+
